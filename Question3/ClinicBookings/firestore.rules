@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Each user may only touch the document whose id equals their own UID.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      // Bookings live in a subcollection, so they must be protected as well.
+      // {userId} comes from the parent path, so a signed-in user cannot reach
+      // another user's bookings by changing the id in the path.
+      match /bookings/{bookingId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Everything else is denied by default.
+  }
+}
